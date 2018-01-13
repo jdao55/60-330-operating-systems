@@ -41,14 +41,20 @@ int main(int argc, char* argv[])
         write_amt=write(dest_file, buffer,  read_amt);
         if(write_amt < 0)
         {
-            perror("error while reading/writing file\n");
+            close(dest_file);
+            close(src_file);
+            perror("error while writing file\n");
             exit(1);
         }
             
     }
-    //close files
     close(dest_file);
     close(src_file);
+    if (read_amt <0)
+    {
+        perror("error while reading file");
+        exit(1);
+    }
     return 0;
         
 }
