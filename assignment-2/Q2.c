@@ -11,6 +11,13 @@ void kill_ppid(char *str);
 void show_proceses();
 int main()
 {
+    //check if program Q1 is present
+    if( access( "Q1", F_OK ) != -1 )
+    {
+        perror("Program Q1 not in current directory");
+        exit(1);
+    }
+    // file exists
     puts("Forking and running Q1\n...\n");
     pid_t pid =fork();
     if (pid <0)
