@@ -18,8 +18,8 @@ int main()
     {
         hit_count=0;
         seed=25234 + 17*omp_get_thread_num();
-        #pragma parallel for
-        for(i=0;i<args/12;i++)
+        #pragma omp for
+        for(i=0;i<args;i++)
         {
             x=rand_double(&seed);
             y=rand_double(&seed);
@@ -33,12 +33,11 @@ int main()
         {
             circle_count+=hit_count;
         }
+        printf("%d\n",omp_get_thread_num());
     }
               
     double pi=4.0* (circle_count/(double)args);
     printf("Caculated PI value for %d hits out of %d points is:\n %lf\n",circle_count, args, pi);
     
-    
+    return 0;
 }
-
-
