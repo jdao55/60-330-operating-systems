@@ -17,7 +17,7 @@ int main()
     #pragma omp parallel private(x,y,seed, hit_count,i) shared(circle_count) num_threads(12)
     {
         hit_count=0;
-        seed=25234 + 17*omp_get_thread_num();
+        seed=25234 + 17* __builtin_omp_get_thread_num();
         #pragma omp for
         for(i=0;i<args;i++)
         {
@@ -33,7 +33,6 @@ int main()
         {
             circle_count+=hit_count;
         }
-        printf("%d\n",omp_get_thread_num());
     }
               
     double pi=4.0* (circle_count/(double)args);
