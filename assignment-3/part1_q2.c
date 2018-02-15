@@ -14,7 +14,7 @@ int main()
     double x,y;
     
 
-    #pragma omp parallel private(x,y,seed, hit_count,i) shared(circle_count) num_threads(12)
+    #pragma omp parallel private(x,y,seed, hit_count,i) shared(circle_count)
     {
         hit_count=0;
         seed=25234 + 17* __builtin_omp_get_thread_num();

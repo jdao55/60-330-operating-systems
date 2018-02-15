@@ -1,7 +1,8 @@
 CC=gcc
-CFLAGS=-Wall -Wextra -O3 -march=native -Ofast
+CFLAGS=-Wall -Wextra -O3 -march=native 
 LIBS= -lpthread -lm -fopenmp
 all: part1_q1 part1_q2 part1_q3 part1_q4 part2
+
 part1_q1: part1_q1.c 
 	$(CC) $(CFLAGS) part1_q1.c -o bin/part1_q1 $(LIBS)
 part1_q2: part1_q2.c 

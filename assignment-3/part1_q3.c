@@ -17,6 +17,11 @@ int main()
     int err, i;
     int args=1000000;
     int targs=1000000/4;
+    if (pthread_mutex_init(&mlock, NULL) != 0)
+    {
+        perror("\n mutex init failed\n");
+        return 1;
+    }
     for(i=0;i<4;i++)
     {
         err=pthread_create(&tid[i], NULL, point_gen, (void*)&targs);

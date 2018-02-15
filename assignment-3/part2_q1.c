@@ -14,13 +14,17 @@ void find_pi_q2(int point_num);
 
 int main()
 {
+    puts("1st call is repeated to load fucntions to cache");
+    puts("\nBechmarks:");
     puts("Question 1");
+     find_pi_q1(100);
     find_pi_q1(100);
     find_pi_q1(1000);
     find_pi_q1(10000);
     find_pi_q1(100000);
     find_pi_q1(1000000);
     puts("\nQuestion 2");
+    find_pi_q2(100);
     find_pi_q2(100);
     find_pi_q2(1000);
     find_pi_q2(10000);
@@ -65,8 +69,8 @@ void find_pi_q1(int point_num)
     pthread_join(tid, NULL);
     double pi=4.0* (circle_count)/(double)point_num;
     gettimeofday(&t2, NULL);
-    elapsedTime += (t2.tv_usec - t1.tv_usec) / 1000.0;
-    printf("Caculated PI = %f using %d points in %lf milisec\n",
+    elapsedTime += (1000000*(t2.tv_sec-t1.tv_sec)+(t2.tv_usec - t1.tv_usec)) / 1000.0;
+    printf("Caculated PI = %f using %7d points in %lf milisec\n",
            pi, point_num,elapsedTime);   
 }
 void find_pi_q2(int point_num)
@@ -78,7 +82,7 @@ void find_pi_q2(int point_num)
     struct timeval t1, t2;
     double elapsedTime=0;
     gettimeofday(&t1, NULL);
-#pragma omp parallel private(x,y,seed, hit_count,i) shared(circle_count) num_threads(4)
+    #pragma omp parallel private(x,y,seed, hit_count,i) shared(circle_count)
     {
         hit_count=0;
         seed=25234 + 17*__builtin_omp_get_thread_num();
@@ -101,8 +105,8 @@ void find_pi_q2(int point_num)
               
     double pi=4.0* (circle_count/(double)point_num);
     gettimeofday(&t2, NULL);
-    elapsedTime += (t2.tv_usec - t1.tv_usec) / 1000.0;
-    printf("Caculated PI = %f using %d points in %lf milisec\n",
+    elapsedTime += (1000000*(t2.tv_sec-t1.tv_sec)+(t2.tv_usec - t1.tv_usec)) / 1000.0;
+    printf("Caculated PI = %f using %7d points in %lf milisec\n",
            pi, point_num,elapsedTime); 
     
 }

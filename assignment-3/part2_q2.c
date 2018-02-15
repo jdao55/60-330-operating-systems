@@ -1,25 +1,24 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdio.h>
 #include <pthread.h>
 #include <sys/time.h>
 #include <time.h>
 #include <math.h>
 
 pthread_mutex_t mlock;
+pthread_mutex_t mlock_2;
 int circle_count=0;
 
 double rand_double(uint *seed){return rand_r(seed)/((double)RAND_MAX+1);}
 void *point_gen(void* amount);
-void find_pi_q3(int point_num, int threads);
-void find_pi_q4_2(int point_num);
-void find_pi_q4_20(int point_num);
-void find_pi_q4_40(int point_num);
-void find_pi_q4_80(int point_num);
-void find_pi_q4_100(int point_num);
-
+void find_pi_q3(int point_num, int threads_num);
+void find_pi_q4(int point_num, int threads_num);
 int main()
 {
+    puts("1st call to loads fucntions to cache");
+    find_pi_q3(1,1);
+    find_pi_q4(1,1);
+    puts("\nBechmarks:");
    
     puts("Question 3");
     find_pi_q3(1000000,2);
@@ -29,25 +28,27 @@ int main()
     find_pi_q3(1000000,100);
    
     puts("\nQuestion 4");
-    find_pi_q4_2(1000000);
-    find_pi_q4_20(1000000);
-    find_pi_q4_40(1000000);
-    find_pi_q4_80(1000000);
-    find_pi_q4_100(1000000);
+    find_pi_q4(1000000,2);
+    find_pi_q4(1000000,20);
+    find_pi_q4(1000000,40);
+    find_pi_q4(1000000,80);
+    find_pi_q4(1000000,100);
 
     return 0;
 }
 
 void *point_gen(void* amount)
 {
-    uint seed=time(NULL);
+    pthread_mutex_lock(&mlock_2);
+    uint seed=time(NULL);//(25234 + 19*(time(NULL)%113));
+    pthread_mutex_unlock(&mlock_2);
     int i, hit_count=0;
     double x,y;
     for(i=0;i<*((int *) amount);i++)
     {
         x=rand_double(&seed);
         y=rand_double(&seed);
-        if(sqrt(x*x+y*y)<1.0)
+        if((x*x+y*y)<1.0)
         {
             ++hit_count;
         }
@@ -70,7 +71,11 @@ void find_pi_q3(int point_num, int threads)
     circle_count=0;
     
     gettimeofday(&t1, NULL);
-
+    if (pthread_mutex_init(&mlock, NULL) != 0 || pthread_mutex_init(&mlock_2, NULL) != 0)
+    {
+        perror("mutex init failed:");
+        exit(1);
+    }
     int thread_points=point_num/threads;
     for(i=0;i<threads;i++)
     {
@@ -87,192 +92,52 @@ void find_pi_q3(int point_num, int threads)
     {
         pthread_join(tid[i], NULL);
     }
+
     double pi=4.0* (circle_count)/(double)point_num;
+
+    //free resources
     pthread_mutex_destroy(&mlock);
+    pthread_mutex_destroy(&mlock_2);
     free(tid);
+
     gettimeofday(&t2, NULL);
-    elapsedTime += (t2.tv_usec - t1.tv_usec) / 1000.0;
+    elapsedTime += (1000000*(t2.tv_sec-t1.tv_sec)+(t2.tv_usec - t1.tv_usec)) / 1000.0;
+
     printf("PI = %f points = %d \tmilisec=%lf slaves=%d\n",
            pi, point_num,elapsedTime, threads);   
 }
 
-void find_pi_q4_2(int point_num)
+void find_pi_q4(int point_num, int threads_num)
 {
     uint seed;
-    int i=0, hit_count;
+    int i=0;
     double x,y;
     circle_count=0;
     struct timeval t1, t2;
     double elapsedTime=0;
     gettimeofday(&t1, NULL);
-    #pragma omp parallel private(x,y,seed, hit_count,i) shared(circle_count) num_threads(2)
+    #pragma omp parallel private(x,y,seed, i) reduction(+:circle_count) num_threads(threads_num)
     {
-        hit_count=0;
-        seed=25234 + 17* __builtin_omp_get_thread_num();
-        #pragma omp for 
-        for(i=0;i<point_num;i++)
-        {
-            x=rand_double(&seed);
-            y=rand_double(&seed);
-            if(sqrt(x*x+y*y)<1.0)
-            { 
-                ++hit_count;
-            }
-            
-        }
-        #pragma omp critical
-        {
-            circle_count+=hit_count;
-        }
-    }
-              
-    double pi=4.0* (circle_count/(double)point_num);
-    gettimeofday(&t2, NULL);
-    elapsedTime += (t2.tv_usec - t1.tv_usec) / 1000.0;
-    printf("PI = %f points = %7d \tmilisec=%lf slaves=2\n",
-           pi, point_num,elapsedTime); 
-    
-}
-void find_pi_q4_20(int point_num)
-{
-    uint seed;
-    int i=0, hit_count;
-    double x,y;
-    circle_count=0;
-    struct timeval t1, t2;
-    double elapsedTime=0;
-    gettimeofday(&t1, NULL);
-#pragma omp parallel private(x,y,seed, hit_count,i) shared(circle_count) num_threads(20)
-    {
-        hit_count=0;
-        seed=25234 + 17* __builtin_omp_get_thread_num();
+        circle_count=0;
+        seed=time(NULL) + 17* __builtin_omp_get_thread_num();
         #pragma omp for
         for(i=0;i<point_num;i++)
         {
             x=rand_double(&seed);
             y=rand_double(&seed);
-            if(sqrt(x*x+y*y)<1.0)
-            { 
-                ++hit_count;
-            }
-            
-        }
-        #pragma omp critical
-        {
-            circle_count+=hit_count;
-        }
-    }      
-    double pi=4.0* (circle_count/(double)point_num);
-    gettimeofday(&t2, NULL);
-    elapsedTime += (t2.tv_usec - t1.tv_usec) / 1000.0;
-    printf("PI = %f points = %7d \tmilisec=%lf slaves=20\n",
-           pi, point_num,elapsedTime); 
-    
-}
-void find_pi_q4_40(int point_num)
-{
-    uint seed;
-    int i=0, hit_count;
-    double x,y;
-    circle_count=0;
-    struct timeval t1, t2;
-    double elapsedTime=0;
-    gettimeofday(&t1, NULL);
-#pragma omp parallel private(x,y,seed, hit_count,i) shared(circle_count) num_threads(40)
-    {
-        hit_count=0;
-        seed=25234 + 17* __builtin_omp_get_thread_num();
-        #pragma omp for
-        for(i=0;i<point_num;i++)
-        {
-            x=rand_double(&seed);
-            y=rand_double(&seed);
-            if(sqrt(x*x+y*y)<1.0)
-            { 
-                ++hit_count;
-            }
-            
-        }
-        #pragma omp critical
-        {
-            circle_count+=hit_count;
-        }
-    }
-              
-    double pi=4.0* (circle_count/(double)point_num);
-    gettimeofday(&t2, NULL);
-    elapsedTime += (t2.tv_usec - t1.tv_usec) / 1000.0;
-    printf("PI = %f points = %7d \tmilisec=%lf slaves=40\n",
-           pi, point_num,elapsedTime); 
-    
-}
-void find_pi_q4_80(int point_num)
-{
-    uint seed;
-    int i=0, hit_count;
-    double x,y;
-    circle_count=0;
-    struct timeval t1, t2;
-    double elapsedTime=0;
-    gettimeofday(&t1, NULL);
-#pragma omp parallel private(x,y,seed, hit_count,i) shared(circle_count) num_threads(80)
-    {
-        hit_count=0;
-        seed=25234 + 17* __builtin_omp_get_thread_num();
-        #pragma omp for
-        for(i=0;i<point_num;i++)
-        {
-            x=rand_double(&seed);
-            y=rand_double(&seed);
-            if(sqrt(x*x+y*y)<1.0)
-            { 
-                ++hit_count;
-            }
-            
-        }
-        #pragma omp critical
-        {
-            circle_count+=hit_count;
-        }
-    }
-              
-    double pi=4.0* (circle_count/(double)point_num);
-    gettimeofday(&t2, NULL);
-    elapsedTime += (t2.tv_usec - t1.tv_usec) / 1000.0;
-    printf("PI = %f points = %7d \tmilisec=%lf slaves=80\n",
-           pi, point_num,elapsedTime); 
-    
-}
-void find_pi_q4_100(int point_num)
-{
-    uint seed;
-    int i=0, hit_count;
-    double x,y;
-    circle_count=0;
-    struct timeval t1, t2;
-    double elapsedTime=0;
-    gettimeofday(&t1, NULL);
-#pragma omp parallel private(x,y,seed, hit_count,i) reduction(+:circle_count) num_threads(100)
-    {
-        hit_count=0;
-        seed=25234 + 17* __builtin_omp_get_thread_num();
-        #pragma omp for
-        for(i=0;i<point_num;i++)
-        {
-            x=rand_double(&seed);
-            y=rand_double(&seed);
-            if(sqrt(x*x+y*y)<1.0)
+            if((x*x+y*y)<1.0)
             {
-                ++circle_count;
+                circle_count+=1;
             }
-            
         }
     }
-              
+    //calc pi          
     double pi=4.0* (circle_count/(double)point_num);
+    //get elapsedtime
     gettimeofday(&t2, NULL);
-    elapsedTime += (t2.tv_usec - t1.tv_usec) / 1000.0;
-    printf("PI = %f points = %7d \tmilisec=%lf slaves=100\n",
-           pi, point_num,elapsedTime); 
+    elapsedTime += (1000000*(t2.tv_sec-t1.tv_sec)+(t2.tv_usec - t1.tv_usec)) / 1000.0;
+
+    printf("PI = %f points = %7d \tmilisec=%lf slaves=%d\n",
+           pi, point_num, elapsedTime, threads_num); 
     
 }
