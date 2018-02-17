@@ -4,6 +4,7 @@
 #include <sys/time.h>
 #include <time.h>
 #include <math.h>
+#include <omp.h>
 
 pthread_mutex_t mlock;
 pthread_mutex_t mlock_2;
@@ -119,7 +120,7 @@ void find_pi_q4(int point_num, int threads_num)
     #pragma omp parallel private(x,y,seed, i) reduction(+:circle_count) num_threads(threads_num)
     {
         circle_count=0;
-        seed=time(NULL) + 17* __builtin_omp_get_thread_num();
+        seed=time(NULL) + 17* omp_get_thread_num();
         #pragma omp for
         for(i=0;i<point_num;i++)
         {
