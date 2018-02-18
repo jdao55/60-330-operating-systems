@@ -1,26 +1,19 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
-/*
-typedef struct
-{
-    uint32_t page;
-    uint32_t offset;
-    
-}address;
-*/
 
-void get_addr(uint64_t addr)
-{
-    uint64_t page=addr>>12;
-    uint64_t offset=addr&0x00000fFF;
-    printf("The address %lu contains:\npage number = %lu\noffset = %lu\n", addr,page,offset);
-    
-}
+
 
 int main(int argc, char * argv[])
 {
-    unsigned long addr=atoll(argv[1]);
-    get_addr(addr);
+    if(argc<2)
+    {
+        puts("Call with: q1 <32 bit adresses>");
+        exit(1);
+    }
+    uint32_t addr=atol(argv[1]);
+    uint32_t page=addr>>12;
+    uint32_t offset=addr&0x00000fFF;
+    printf("The address %d contains:\npage number = %d\noffset = %d\n", addr,page,offset);
     return 0;
 }
