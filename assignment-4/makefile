@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-Wall -Wextra -march=native  
+CFLAGS=-Wall -Wextra -march=native -O3
 all: q1 q2
 
 q1:q1.c

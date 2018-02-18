@@ -18,24 +18,33 @@ int main(int argc, char * argv[])
     srand(seed);
     clock_t time;
     double elapse_time;
-    uint32_t page,offset;
+    uint32_t *page,*offset;
 
     //init random address array
     rand_num=(uint *)malloc(addr_count*sizeof(uint));
+    page=(uint *)malloc(addr_count*sizeof(uint));
+    offset=(uint *)malloc(addr_count*sizeof(uint));
     for(i=0;i<addr_count;i++)
     {
         rand_num[i]=rand();
     }
-    //find addresses page and offset & find cpu time 
+
+    //find addresses page and offset  
     time=clock();
     for(i=0;i<addr_count;i++)
     {
-        page=rand_num[i]>>12;
-        offset=rand_num[i] & 0x0FFF;
+        page[i]=rand_num[i]>>12;
+        offset[i]=rand_num[i] & 0x0FFF;
     }
+    
+    //find cpu time
     time=clock()-time;
     elapse_time=time/(CLOCKS_PER_SEC/1000.0);
+
+    //free resources
     free(rand_num);
+    free(page);
+    free(offset);
 
     printf("it took %ld cpu time or %.2lf milisec \n\
 to find offset and page number of %ld addresses\n", time, elapse_time, addr_count);
